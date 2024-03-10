@@ -12,7 +12,7 @@ enum Responses {
 impl Responses {
     fn as_str(&self) -> &str {
         match self {
-            Responses::Ok => "HTTP/1.1 200 OK\r\n\r\n",
+            Responses::Ok => "HTTP/1.1 200 OK\r\n",
             Responses::NotFound => "HTTP/1.1 404 Not Found\r\n\r\n",
         }
     }
