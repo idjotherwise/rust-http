@@ -58,14 +58,17 @@ fn main() {
                 let response = match first_part.as_str() {
                     "echo" => {
                         format!(
-                            "{}{}{}{}",
+                            "{}{}{}{}\r\n",
                             Responses::Ok.as_str(),
                             ContentTypes::TextPlain.as_str(),
                             to_content_length(second_part.len()),
                             second_part.as_str()
                         )
                     }
-                    "" => format!("{}", Responses::Ok.as_str()),
+                    "" => {
+                        println!("got here");
+                        format!("{}", Responses::Ok.as_str())
+                    }
                     _ => {
                         format!("{}", Responses::NotFound.as_str())
                     }
