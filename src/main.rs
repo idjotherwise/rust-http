@@ -47,7 +47,7 @@ fn main() {
             Ok(mut conn) => {
                 let mut buf_reader = BufReader::new(&mut conn);
                 let mut buf_writer: String = String::new();
-                let content_length = buf_reader.read_line(&mut buf_writer).expect("Read error");
+                buf_reader.read_line(&mut buf_writer).expect("Read error");
                 let path = buf_writer.split(" ").skip(1).take(1).collect::<String>();
                 let msg = path.split("/");
                 let first_part = msg.clone().skip(1).take(1).collect::<String>();
@@ -61,7 +61,7 @@ fn main() {
                             "{}{}{}{}",
                             Responses::Ok.as_str(),
                             ContentTypes::TextPlain.as_str(),
-                            to_content_length(content_length),
+                            to_content_length(second_part.len()),
                             second_part.as_str()
                         )
                     }
