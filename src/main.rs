@@ -1,6 +1,6 @@
 // Uncomment this block to pass the first stage
 use std::{
-    io::{BufRead, BufReader, Read, Write},
+    io::{BufRead, BufReader, Write},
     net::TcpListener,
 };
 
@@ -10,10 +10,10 @@ enum Responses {
 }
 
 impl Responses {
-    fn as_bytes(&self) -> &'static [u8] {
+    fn as_str(&self) -> &str {
         match self {
-            Responses::Ok => b"HTTP/1.1 200 OK\r\n\r\n",
-            Responses::NotFound => b"HTTP/1.1 404 Not Found\r\n\r\n",
+            Responses::Ok => "HTTP/1.1 200 OK\r\n\r\n",
+            Responses::NotFound => "HTTP/1.1 404 Not Found\r\n\r\n",
         }
     }
 }
@@ -23,15 +23,15 @@ enum ContentTypes {
 }
 
 impl ContentTypes {
-    fn as_bytes(&self) -> &'static [u8] {
+    fn as_str(&self) -> &str {
         match self {
-            ContentTypes::TextPlain => b"Content-Type: text/plain\r\n",
+            ContentTypes::TextPlain => "Content-Type: text/plain\r\n",
         }
     }
 }
 
-fn to_content_length(n: usize) -> Vec<u8> {
-    format!("Content-Length: {n}\r\n\r\n").into_bytes()
+fn to_content_length(n: usize) -> String {
+    format!("Content-Length: {n}\r\n\r\n")
 }
 
 fn main() {
@@ -55,26 +55,22 @@ fn main() {
                 // println!("{}", first_part);
                 // println!("{}", second_part);
 
-                match first_part.as_str() {
+                let response = match first_part.as_str() {
                     "echo" => {
-                        conn.write(Responses::Ok.as_bytes())
-                            .expect("Response Status write error");
-                        conn.write(ContentTypes::TextPlain.as_bytes())
-                            .expect("Content-type write error");
-                        conn.write(&to_content_length(content_length))
-                            .expect("Content Length write error");
-                        conn.write(second_part.as_bytes())
-                            .expect("Body write error");
+                        format!(
+                            "{}{}{}{}",
+                            Responses::Ok.as_str(),
+                            ContentTypes::TextPlain.as_str(),
+                            to_content_length(content_length),
+                            second_part.as_str()
+                        )
                     }
-                    "" => {
-                        conn.write(Responses::Ok.as_bytes())
-                            .expect("Response Status write error");
-                    }
+                    "" => format!("{}", Responses::Ok.as_str()),
                     _ => {
-                        conn.write(Responses::NotFound.as_bytes())
-                            .expect("Write error");
+                        format!("{}", Responses::NotFound.as_str())
                     }
-                }
+                };
+                conn.write(response.as_bytes()).unwrap();
             }
             Err(e) => {
                 println!("error: {}", e);
