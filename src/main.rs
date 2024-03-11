@@ -1,7 +1,7 @@
 // Uncomment this block to pass the first stage
 use std::{
     io::{BufRead, BufReader, Write},
-    net::TcpListener,
+    net::{TcpListener, TcpStream},
 };
 
 enum Responses {
@@ -34,6 +34,14 @@ fn to_content_length(n: usize) -> String {
     format!("Content-Length: {n}\r\n\r\n")
 }
 
+fn take_line(reader: &mut BufReader<&mut TcpStream>) -> String {
+    let mut buf_writer = String::new();
+    reader
+        .read_line(&mut buf_writer)
+        .expect("Read next line error");
+    buf_writer
+}
+
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
@@ -52,8 +60,15 @@ fn main() {
                 let msg = path.split("/");
                 let first_part = msg.clone().skip(1).take(1).collect::<String>();
                 let second_part = msg.clone().skip(2).collect::<Vec<&str>>().join("/");
-                // println!("{}", first_part);
-                // println!("{}", second_part);
+                take_line(&mut buf_reader);
+                let mut user_agent = String::new();
+                let next_line = take_line(&mut buf_reader);
+
+                let mut header = next_line.split(':');
+                match header.next().unwrap() {
+                    "User-Agent" => user_agent = header.next().unwrap().trim().to_owned(),
+                    _ => {}
+                }
 
                 let response = match first_part.as_str() {
                     "echo" => {
@@ -63,6 +78,15 @@ fn main() {
                             ContentTypes::TextPlain.as_str(),
                             to_content_length(second_part.len()),
                             second_part.as_str()
+                        )
+                    }
+                    "user-agent" => {
+                        format!(
+                            "{}{}{}{}\r\n\r\n",
+                            Responses::Ok.as_str(),
+                            ContentTypes::TextPlain.as_str(),
+                            to_content_length(user_agent.len()),
+                            user_agent
                         )
                     }
                     "" => {
