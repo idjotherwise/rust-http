@@ -1,5 +1,7 @@
 // Uncomment this block to pass the first stage
+use clap::Parser;
 use std::{
+    fs,
     io::{BufRead, BufReader, Write},
     net::{TcpListener, TcpStream},
 };
@@ -20,12 +22,14 @@ impl Responses {
 
 enum ContentTypes {
     TextPlain,
+    OctetStream,
 }
 
 impl ContentTypes {
     fn as_str(&self) -> &str {
         match self {
             ContentTypes::TextPlain => "Content-Type: text/plain\r\n",
+            ContentTypes::OctetStream => "Content-Type: application/octet-stream\r\n",
         }
     }
 }
@@ -42,17 +46,24 @@ fn take_line(reader: &mut BufReader<&mut TcpStream>) -> String {
     buf_writer
 }
 
+#[derive(Parser, Debug)]
+struct Cli {
+    #[arg(short, long)]
+    directory: Option<String>,
+}
+
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     println!("Logs from your program will appear here!");
 
-    // Uncomment this block to pass the first stage
-    //
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
-    //
+
+    // let dir = args[0];
+
     for stream in listener.incoming() {
         std::thread::spawn(|| match stream {
             Ok(mut conn) => {
+                let cli = Cli::parse();
                 let mut buf_reader = BufReader::new(&mut conn);
                 let mut buf_writer: String = String::new();
                 buf_reader.read_line(&mut buf_writer).expect("Read error");
@@ -88,6 +99,25 @@ fn main() {
                             to_content_length(user_agent.len()),
                             user_agent
                         )
+                    }
+                    "files" => {
+                        if let Some(contents) = fs::read_to_string(format!(
+                            "{}/{}",
+                            cli.directory.unwrap(),
+                            second_part
+                        ))
+                        .ok()
+                        {
+                            format!(
+                                "{}{}{}{}\r\n\r\n",
+                                Responses::Ok.as_str(),
+                                ContentTypes::OctetStream.as_str(),
+                                to_content_length(contents.len()),
+                                contents
+                            )
+                        } else {
+                            format!("{}\r\n", Responses::NotFound.as_str(),)
+                        }
                     }
                     "" => {
                         format!("{}\r\n", Responses::Ok.as_str())
