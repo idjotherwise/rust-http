@@ -90,7 +90,6 @@ fn main() {
                         )
                     }
                     "" => {
-                        println!("got here");
                         format!("{}\r\n", Responses::Ok.as_str())
                     }
                     _ => {
