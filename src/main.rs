@@ -51,7 +51,7 @@ fn main() {
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
     //
     for stream in listener.incoming() {
-        match stream {
+        std::thread::spawn(|| match stream {
             Ok(mut conn) => {
                 let mut buf_reader = BufReader::new(&mut conn);
                 let mut buf_writer: String = String::new();
@@ -101,6 +101,6 @@ fn main() {
             Err(e) => {
                 println!("error: {}", e);
             }
-        }
+        });
     }
 }
